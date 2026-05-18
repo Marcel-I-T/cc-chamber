@@ -1,0 +1,20 @@
+node_modules
+dist
+release
+.DS_Store
+*.log
+.env
+.env.local
+
+# Build artifacts
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Editor/agent state
+.claude-flow/
+.omc/
+.vscode/
+.idea/
+
+# OS
+Thumbs.db

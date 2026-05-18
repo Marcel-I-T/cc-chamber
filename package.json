@@ -1,0 +1,90 @@
+{
+  "name": "openclauder",
+  "version": "0.1.0",
+  "description": "Strukturierter Claude-Code-Desktop-Wrapper im Open-Chamber-Style — Terminal + Chat + File-Browser für deine Claude-Code-Subscription",
+  "main": "electron/main.mjs",
+  "type": "module",
+  "bin": {
+    "openclauder": "bin/openclauder.mjs"
+  },
+  "scripts": {
+    "start": "node bin/openclauder.mjs",
+    "dev": "concurrently -k -n vite,electron -c blue,green \"npm:dev:vite\" \"npm:dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on tcp:5173 && cross-env CKAUDE_DEV=1 electron .",
+    "build": "tsc -b && vite build",
+    "build:app": "npm run build && electron-builder",
+    "rebuild": "cd node_modules/node-pty && npm_config_target=33.4.11 npm_config_arch=arm64 npm_config_target_arch=arm64 npm_config_disturl=https://electronjs.org/headers npm_config_runtime=electron npm_config_build_from_source=true node-gyp rebuild",
+    "postinstall": "npm run rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Marcel-I-T/openclauder.git"
+  },
+  "homepage": "https://github.com/Marcel-I-T/openclauder",
+  "bugs": {
+    "url": "https://github.com/Marcel-I-T/openclauder/issues"
+  },
+  "license": "MIT",
+  "author": "Marcel",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "anthropic",
+    "electron",
+    "terminal",
+    "chat",
+    "desktop"
+  ],
+  "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-web-links": "^0.11.0",
+    "@xterm/xterm": "^5.5.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.460.0",
+    "node-pty": "^1.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^2.5.4",
+    "zustand": "^5.0.1"
+  },
+  "overrides": {
+    "node-gyp": "^11.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "electron-rebuild": "^3.2.9",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "dev.openclauder.desktop",
+    "productName": "openclauder",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "bin/**",
+      "package.json"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.developer-tools"
+    }
+  }
+}

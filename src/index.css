@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+  }
+  /* Drag region for hidden-inset titlebar — only the chrome is
+     non-selectable so xterm and input fields work properly. */
+  .drag-region {
+    -webkit-app-region: drag;
+    user-select: none;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+  /* Sidebars/dock are static chrome too */
+  aside, .chrome {
+    user-select: none;
+  }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2a33; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a45; }
+}
+
+/* xterm tuning */
+.xterm .xterm-viewport {
+  background-color: transparent !important;
+}
+.xterm-screen {
+  padding: 8px 12px;
+}
+
+/* Markdown rendering inside chat bubbles */
+.ckaude-md { word-break: break-word; }
+.ckaude-md p { margin: 0 0 0.6em 0; }
+.ckaude-md p:last-child { margin-bottom: 0; }
+.ckaude-md h1, .ckaude-md h2, .ckaude-md h3, .ckaude-md h4 {
+  margin: 0.8em 0 0.4em 0;
+  font-weight: 600;
+  color: #e8e8ec;
+  line-height: 1.3;
+}
+.ckaude-md h1 { font-size: 1.25em; }
+.ckaude-md h2 { font-size: 1.15em; }
+.ckaude-md h3 { font-size: 1.05em; }
+.ckaude-md h4 { font-size: 1em; }
+.ckaude-md ul, .ckaude-md ol { margin: 0 0 0.6em 1.25em; padding-left: 0.25em; }
+.ckaude-md li { margin: 0.15em 0; }
+.ckaude-md li > p { margin: 0; }
+.ckaude-md a { color: #a78bfa; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.ckaude-md a:hover { color: #c4b5fd; }
+.ckaude-md strong { color: #ffffff; font-weight: 600; }
+.ckaude-md em { color: #d6d6df; }
+.ckaude-md hr { border: 0; border-top: 1px solid #2a2a33; margin: 1em 0; }
+.ckaude-md blockquote {
+  margin: 0.6em 0;
+  padding: 0.2em 0.75em;
+  border-left: 3px solid #3a3a45;
+  color: #b9b9c4;
+}
+.ckaude-md code {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  background: rgba(167, 139, 250, 0.10);
+  border: 1px solid rgba(167, 139, 250, 0.18);
+  padding: 0.05em 0.32em;
+  border-radius: 4px;
+  font-size: 0.88em;
+}
+.ckaude-md pre {
+  margin: 0.6em 0;
+  background: #15151a;
+  border: 1px solid #2a2a33;
+  border-radius: 6px;
+  padding: 0.65em 0.85em;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.ckaude-md pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+}
+.ckaude-md table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6em 0;
+  font-size: 0.95em;
+}
+.ckaude-md th, .ckaude-md td {
+  border: 1px solid #2a2a33;
+  padding: 0.4em 0.7em;
+  text-align: left;
+}
+.ckaude-md th { background: #1a1a20; font-weight: 600; }
+.ckaude-md input[type="checkbox"] { accent-color: #a78bfa; margin-right: 0.35em; }
