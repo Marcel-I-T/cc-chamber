@@ -1,5 +1,11 @@
 # openclauder
 
+> ⚠️ **Unofficial.** Not affiliated with, endorsed by, or sponsored by Anthropic
+> or the Open Chamber project. "Claude" and "Claude Code" are trademarks of
+> Anthropic, PBC. "Open Chamber" / "OpenCode" belong to their respective
+> authors. This project just wraps the official `claude` CLI for personal,
+> local use — no Anthropic code or binaries are redistributed.
+
 Strukturierter Desktop-Wrapper für **Claude Code**, im Style von [Open Chamber](https://github.com/openchamber/openchamber) — aber statt einer eigenen Chat-Engine bist du direkt an deiner bestehenden Claude-Code-Subscription dran, in zwei Modi:
 
 - **Terminal-Modus** — die echte `claude` TUI in einer xterm.js-Pane via PTY
@@ -106,6 +112,17 @@ Beim Reload werden Sessions mit `resumeOnRespawn: true` markiert, der nächste P
 
 Privates Repo — Issues und PRs nach Absprache.
 
+## Trademarks & Attribution
+
+- **Claude™** and **Claude Code™** are trademarks of Anthropic, PBC.
+  openclauder is an independent, unofficial project. We do not redistribute
+  Anthropic's CLI, models, or any proprietary code — users install the
+  official `claude` CLI themselves via Anthropic's published channels.
+- **Open Chamber** / **OpenCode** belong to their authors and are referenced
+  here only for visual/structural inspiration. No code is copied.
+- All bundled npm dependencies are MIT/Apache/ISC licensed; see each
+  package's own LICENSE file in `node_modules/`.
+
 ## Lizenz
 
-MIT.
+[MIT](./LICENSE).
