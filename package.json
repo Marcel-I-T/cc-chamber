@@ -1,17 +1,17 @@
 {
-  "name": "openclauder",
+  "name": "cc-chamber",
   "version": "0.1.0",
-  "description": "Strukturierter Claude-Code-Desktop-Wrapper im Open-Chamber-Style — Terminal + Chat + File-Browser für deine Claude-Code-Subscription",
+  "description": "A clean desktop room for Claude Code — terminal + markdown chat + file browser, in the Open-Chamber style",
   "main": "electron/main.mjs",
   "type": "module",
   "bin": {
-    "openclauder": "bin/openclauder.mjs"
+    "cc-chamber": "bin/cc-chamber.mjs"
   },
   "scripts": {
-    "start": "node bin/openclauder.mjs",
+    "start": "node bin/cc-chamber.mjs",
     "dev": "concurrently -k -n vite,electron -c blue,green \"npm:dev:vite\" \"npm:dev:electron\"",
     "dev:vite": "vite",
-    "dev:electron": "wait-on tcp:5173 && cross-env CKAUDE_DEV=1 electron .",
+    "dev:electron": "wait-on tcp:5173 && cross-env CC_CHAMBER_DEV=1 electron .",
     "build": "tsc -b && vite build",
     "build:app": "npm run build && electron-builder",
     "rebuild": "cd node_modules/node-pty && npm_config_target=33.4.11 npm_config_arch=arm64 npm_config_target_arch=arm64 npm_config_disturl=https://electronjs.org/headers npm_config_runtime=electron npm_config_build_from_source=true node-gyp rebuild",
@@ -19,22 +19,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Marcel-I-T/openclauder.git"
+    "url": "git+https://github.com/Marcel-I-T/cc-chamber.git"
   },
-  "homepage": "https://github.com/Marcel-I-T/openclauder",
+  "homepage": "https://github.com/Marcel-I-T/cc-chamber",
   "bugs": {
-    "url": "https://github.com/Marcel-I-T/openclauder/issues"
+    "url": "https://github.com/Marcel-I-T/cc-chamber/issues"
   },
   "license": "MIT",
   "author": "Marcel",
   "keywords": [
-    "claude",
     "claude-code",
     "anthropic",
     "electron",
     "terminal",
     "chat",
-    "desktop"
+    "desktop",
+    "developer-tool",
+    "ai-coding"
   ],
   "dependencies": {
     "@xterm/addon-fit": "^0.10.0",
@@ -71,8 +72,8 @@
     "wait-on": "^8.0.1"
   },
   "build": {
-    "appId": "dev.openclauder.desktop",
-    "productName": "openclauder",
+    "appId": "dev.cc-chamber.desktop",
+    "productName": "cc-chamber",
     "directories": {
       "output": "release"
     },
@@ -80,11 +81,13 @@
       "dist/**",
       "electron/**",
       "bin/**",
+      "assets/**",
       "package.json"
     ],
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/logo-mark.svg"
     }
   }
 }

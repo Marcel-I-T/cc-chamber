@@ -6,10 +6,10 @@ import './index.css';
 import '@xterm/xterm/css/xterm.css';
 
 window.addEventListener('error', (e) => {
-  console.error('[ckaude] window error:', e.error || e.message);
+  console.error('[cc-chamber] window error:', e.error || e.message);
 });
 window.addEventListener('unhandledrejection', (e) => {
-  console.error('[ckaude] unhandled rejection:', e.reason);
+  console.error('[cc-chamber] unhandled rejection:', e.reason);
 });
 
 // NOTE: StrictMode is intentionally disabled. Our app holds long-lived

@@ -109,7 +109,7 @@ export function TerminalPane({ session, isActive }: Props) {
             ? ' — try in a terminal: see what the error is'
             : '';
         term.write(
-          `\r\n\x1b[33m[ckaude] process exited (${exitCode})${hint}\x1b[0m\r\n`
+          `\r\n\x1b[33m[cc-chamber] process exited (${exitCode})${hint}\x1b[0m\r\n`
         );
         update(sessionId, { status: 'exited', exitCode });
       });
@@ -126,7 +126,7 @@ export function TerminalPane({ session, isActive }: Props) {
       if (cancelled) return;
 
       if (!res.ok) {
-        term.write(`\r\n\x1b[31m[ckaude] failed to spawn: ${res.error}\x1b[0m\r\n`);
+        term.write(`\r\n\x1b[31m[cc-chamber] failed to spawn: ${res.error}\x1b[0m\r\n`);
         update(sessionId, { status: 'error' });
         return;
       }
@@ -137,7 +137,7 @@ export function TerminalPane({ session, isActive }: Props) {
 
       const cmdLine = `${res.bin}${res.args?.length ? ' ' + res.args.join(' ') : ''}`;
       term.write(
-        `\x1b[2m[ckaude] $ ${cmdLine}\r\n[ckaude] cwd: ${session.cwd}\r\n[ckaude] pid: ${res.pid}\x1b[0m\r\n`
+        `\x1b[2m[cc-chamber] $ ${cmdLine}\r\n[cc-chamber] cwd: ${session.cwd}\r\n[cc-chamber] pid: ${res.pid}\x1b[0m\r\n`
       );
 
       update(sessionId, { status: 'running', pid: res.pid });

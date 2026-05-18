@@ -1,128 +1,167 @@
-# openclauder
+<div align="center">
+
+<img src="./assets/logo-wordmark.svg" alt="cc-chamber" width="520" />
+
+**A clean desktop room for [Claude Code](https://docs.claude.com/en/docs/claude-code) — terminal, markdown chat, file browser, sessions per project.**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-a78bfa.svg?style=flat-square)](./LICENSE)
+[![Platform: macOS](https://img.shields.io/badge/macOS-arm64-15151a?style=flat-square&logo=apple)](https://github.com/Marcel-I-T/cc-chamber)
+[![Electron 33](https://img.shields.io/badge/Electron-33-2a2a33?style=flat-square&logo=electron)](https://www.electronjs.org)
+[![React 18](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react&logoColor=15151a)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+
+</div>
+
+---
 
 > ⚠️ **Unofficial.** Not affiliated with, endorsed by, or sponsored by Anthropic
 > or the Open Chamber project. "Claude" and "Claude Code" are trademarks of
-> Anthropic, PBC. "Open Chamber" / "OpenCode" belong to their respective
-> authors. This project just wraps the official `claude` CLI for personal,
-> local use — no Anthropic code or binaries are redistributed.
+> Anthropic, PBC. Open Chamber / OpenCode belong to their respective authors.
+> This project just wraps the official `claude` CLI for personal, local use —
+> no Anthropic code or binaries are redistributed.
 
-Strukturierter Desktop-Wrapper für **Claude Code**, im Style von [Open Chamber](https://github.com/openchamber/openchamber) — aber statt einer eigenen Chat-Engine bist du direkt an deiner bestehenden Claude-Code-Subscription dran, in zwei Modi:
+---
 
-- **Terminal-Modus** — die echte `claude` TUI in einer xterm.js-Pane via PTY
-- **Chat-Modus** — formatierte Markdown-Antworten, headless via `claude -p`, mit Session-Resume für Multi-Turn
+## Why
 
-## Features
+The [`claude` CLI](https://docs.claude.com/en/docs/claude-code) is great in the terminal, but eventually you want:
 
-- 🗂 **Projects + Sessions** Sidebar links (collapsible Projekt-Sektionen, Sessions pro Projekt)
-- 📁 **File-Browser** rechts mit Type-coloured Icons, Lazy-Loading, Search
-- 💬 **Terminal/Chat Toggle** pro Session — Markdown-Antworten oder volle TUI
-- 🔐 **Skip-Permissions Toggle** für `--dangerously-skip-permissions`
-- 🎨 **Bottom Composer** mit Model-Picker (Default/Sonnet/Opus), Plan/Build-Mode, Slash-Commands
-- 💾 **Persistenz** — Projekte, Sessions, Chat-Threads überleben Refresh und App-Restart. Sessions starten mit `--continue` neu, Chats mit `--resume <session-id>`
-- ⚡ **Empty-State** mit 3D-Cube + rotierenden Placeholder-Hints
+- A persistent **sessions list** per project — not "which tab was that one again?"
+- A **file tree** that survives session switches
+- A **markdown chat view** for when you want responses to read like docs, not a TUI
+- A toggle for **`--dangerously-skip-permissions`** that doesn't need editing your shell history
 
-## Voraussetzungen
+`cc-chamber` is a thin Electron shell around the official `claude` binary that gives you that, while letting `claude` do everything it normally does. You stay on your own subscription, your sessions stay on your machine, and you can drop back to the raw TUI any time.
 
-- macOS (Linux/Windows untested — PTY-Build sollte aber laufen)
-- Node.js 20+
-- Claude Code CLI installiert ([install guide](https://docs.claude.com/en/docs/claude-code))
-- Aktive Claude-Subscription (Pro/Team/Enterprise)
+## ✨ Features
 
-## Install
+| | |
+|---|---|
+| 🏠 **Projects → Sessions** | Sidebar lists projects (= directories), each with its own session list. Collapsible, renameable, color-tagged. |
+| 💬 **Terminal ⇄ Chat toggle** | Per session, flip between full `claude` TUI and a markdown chat view. Same project context. |
+| 📁 **File browser** | Right sidebar with type-colored icons, lazy-loaded subfolders, search. |
+| 🎨 **Bottom composer** | Model picker (Default / Sonnet / Opus), Plan/Build mode, slash commands, attachments. |
+| 🔐 **Skip-perms toggle** | `--dangerously-skip-permissions` as a per-session toggle. |
+| 💾 **Persistent everything** | Projects, sessions, chat threads survive refresh and app restart. Terminal sessions resume with `--continue`, chats with `--resume <session-id>`. |
+| ⚡ **Two-spawn modes** | Long-running PTY for TUI, headless `claude -p --output-format json` for chat. |
+| 🪟 **OC-style layout** | Header / Sidebar / Main / RightSidebar / BottomDock — proven structure, customised for terminal-first workflow. |
 
-```bash
-git clone https://github.com/Marcel-I-T/openclauder.git
-cd openclauder
-npm install         # installiert deps und kompiliert PTY für Electron
-npm link            # macht `openclauder` global verfügbar
-```
-
-## Starten
+## 🚀 Quickstart
 
 ```bash
-openclauder         # erste Ausführung: baut UI, dann startet Electron
-openclauder --dev   # Vite + Electron mit Hot Module Reload für Hacking
-openclauder --build # nur UI-Bundle bauen, nicht starten
+# Prerequisites: macOS, Node.js 20+, Claude Code CLI installed & signed in
+git clone https://github.com/Marcel-I-T/cc-chamber.git
+cd cc-chamber
+npm install                # installs deps + builds the native PTY
+npm link                   # makes `cc-chamber` available globally
+cc-chamber                 # auto-builds UI on first run, then launches
 ```
 
-## Build-Distribution (DMG)
+After the first run the UI bundle is cached, so subsequent launches start in under a second.
+
+### CLI flags
+
+```
+cc-chamber              launch (auto-builds UI if needed)
+cc-chamber --dev        Vite + Electron with HMR
+cc-chamber --build      rebuild UI bundle without launching
+cc-chamber --version    print version
+cc-chamber --help       show this list
+```
+
+### Build a DMG
 
 ```bash
 npm run build:app
-# Output: release/openclauder-*.dmg
+# Output: release/cc-chamber-*.dmg
 ```
 
-## Architektur
+## 🧠 How it works
 
 ```
-openclauder/
+                          ┌──────────────────────────────────┐
+   (your subscription)    │  Electron renderer (React + TS)  │
+                          │ ────────────────────────────────  │
+                          │  Sidebar  │  Terminal  │ Files    │
+                          │           │   or Chat  │          │
+                          └────┬─────────────┬─────────┬──────┘
+                               │ IPC         │ IPC     │ IPC
+                          ┌────▼──────┐ ┌────▼─────┐ ┌─▼──────┐
+                          │ node-pty  │ │  claude  │ │ fs.list │
+                          │  spawn    │ │  -p ...  │ │         │
+                          │ claude    │ │  --json  │ │         │
+                          └───────────┘ └──────────┘ └────────┘
+                                │             │
+                                └──────┬──────┘
+                                       ▼
+                                 your Claude
+                                 subscription
+```
+
+- **Terminal mode** spawns `claude [--dangerously-skip-permissions] [--continue]` in a real PTY via `node-pty`. xterm.js renders. Full TUI fidelity (Plan mode, slash commands, etc).
+- **Chat mode** is stateless on the wire: each send is `claude -p "<message>" --output-format json [--resume <session-id>]`. The JSON `session_id` is persisted per thread, so follow-up messages keep context.
+
+## 🗂 Architecture
+
+```
+cc-chamber/
 ├── bin/
-│   └── openclauder.mjs      CLI launcher (auto-build + electron spawn)
+│   └── cc-chamber.mjs           CLI launcher (auto-build + Electron spawn)
 ├── electron/
-│   ├── main.mjs             Hauptprozess + IPC (PTY, fs, claude:run)
-│   └── preload.mjs          contextBridge → window.api
+│   ├── main.mjs                 IPC handlers (pty:*, fs:*, claude:run)
+│   └── preload.mjs              contextBridge → window.api
 ├── src/
 │   ├── App.tsx
 │   ├── components/
-│   │   ├── layout/          MainLayout, Header, Sidebar, RightSidebar,
-│   │   │                    BottomDock, BottomComposer
-│   │   ├── terminal/        TerminalPane (xterm.js + node-pty)
-│   │   ├── chat/            ChatView, ChatMessage (Markdown bubbles)
-│   │   ├── files/           FileTree (mit type-colored icons)
-│   │   └── views/           TerminalView, SettingsView, EmptyHero
-│   ├── stores/              useProjectsStore, useSessionStore,
-│   │                        useChatStore, useUIStore (Zustand + persist)
-│   ├── lib/                 utils, fileIcons
+│   │   ├── layout/              MainLayout, Header, Sidebar, RightSidebar,
+│   │   │                        BottomDock, BottomComposer
+│   │   ├── terminal/            TerminalPane (xterm.js + node-pty)
+│   │   ├── chat/                ChatView, ChatMessage (react-markdown + GFM)
+│   │   ├── files/               FileTree (lazy, type-colored icons)
+│   │   └── views/               TerminalView, SettingsView, EmptyHero
+│   ├── stores/                  Zustand stores with persist middleware:
+│   │                            useProjectsStore, useSessionStore,
+│   │                            useChatStore, useUIStore
+│   ├── lib/                     utils, fileIcons
 │   └── types/api.d.ts
-└── package.json
+└── assets/
+    ├── logo-mark.svg
+    ├── logo-wordmark.svg
+    └── favicon.svg
 ```
 
-## Modi im Detail
+## ⚙️ Environment
 
-### Terminal-Modus
+| Variable | Effect |
+|---|---|
+| `CC_CHAMBER_CLAUDE_BIN` | Override the path to the `claude` binary |
+| `CC_CHAMBER_DEV` | Force dev mode (Vite at localhost:5173) |
 
-Spawned `claude [--dangerously-skip-permissions] [--continue]` in einem echten PTY (`node-pty`). xterm.js rendert die TUI inkl. Plan-Mode, Slash-Commands etc. Beim App-Restart wird die Session automatisch mit `--continue` resumed.
+## 🛡 Security model
 
-### Chat-Modus
+- **Local-only.** No network listener, no auth layer. Wrapping with a VPN/SSH tunnel is your job if you want remote access.
+- **One user, one machine.** Hosting a shared instance would route everyone's prompts through your subscription — violates Anthropic's terms and is intentionally not supported.
+- **`--dangerously-skip-permissions` is opt-in per session.** When on, the agent runs without confirmation; only use it in isolated worktrees.
 
-Pro Send: spawnt headless `claude -p "<msg>" --output-format json [--resume <session-id>] [--model X]`. Response wird als JSON geparst, in eine Markdown-Bubble gerendert (Tables, Code-Blocks, GFM). `session_id` wird gespeichert für Folge-Messages → echtes Multi-Turn-Gespräch das auch App-Restart überlebt.
+## 🗺 Roadmap
 
-## Persistenz
+- [ ] Git tab in the right sidebar (branches, status, diffs)
+- [ ] Inline file viewer (click a file in the tree → open in main area)
+- [ ] Linux / Windows builds
+- [ ] First-class Plan/Build indicator that follows claude's actual state
+- [ ] Search across chat history
+- [ ] Theme customization
 
-Alle Daten in `localStorage` (per Browser/Electron-Profil):
+## 🤝 Contributing
 
-- `ckaude-projects` — Projekt-Liste
-- `ckaude-sessions` — Session-Metadata (PIDs/Status werden beim Persist gestrippt)
-- `ckaude-chat` — Chat-Threads inkl. `claudeSessionId` pro Thread
+PRs welcome. The codebase is intentionally small — start by reading `MainLayout.tsx` and `electron/main.mjs`. Run `cc-chamber --dev` for hot reload while hacking.
 
-Beim Reload werden Sessions mit `resumeOnRespawn: true` markiert, der nächste PTY-Spawn nutzt `--continue`.
+## Trademarks & attribution
 
-## Environment
+- **Claude™** and **Claude Code™** are trademarks of **Anthropic, PBC**. cc-chamber is an independent, unofficial project. We do not redistribute Anthropic's CLI, models, or any proprietary code — users install the official `claude` CLI themselves.
+- **Open Chamber** / **OpenCode** belong to their authors and are referenced for visual and structural inspiration. No code is copied.
+- All bundled npm dependencies are MIT / Apache / ISC licensed.
 
-- `CKAUDE_CLAUDE_BIN=/path/to/claude` — Pfad zur Claude-Binary überschreiben
-- `CKAUDE_DEV=1` — Dev-Modus erzwingen
+## License
 
-## Sicherheit
-
-- `--dangerously-skip-permissions` Toggle ist pro Session — der Agent darf dann ohne Rückfrage Dateien ändern, Befehle ausführen, etc. Nur in isolierter `cwd` benutzen.
-- Die App ist **lokal-only** — kein Netzwerk-Listener, kein Auth-Layer. Wenn du auf einem Server exposen willst, brauchst du eigenen Auth/Tunnel davor.
-- Multi-User: jeder Nutzer braucht eigene Installation + eigene Claude-Subscription. Ein gemeinsamer openclauder-Server würde alle Sessions auf dem Host-User-Account laufen lassen.
-
-## Mitwirken
-
-Privates Repo — Issues und PRs nach Absprache.
-
-## Trademarks & Attribution
-
-- **Claude™** and **Claude Code™** are trademarks of Anthropic, PBC.
-  openclauder is an independent, unofficial project. We do not redistribute
-  Anthropic's CLI, models, or any proprietary code — users install the
-  official `claude` CLI themselves via Anthropic's published channels.
-- **Open Chamber** / **OpenCode** belong to their authors and are referenced
-  here only for visual/structural inspiration. No code is copied.
-- All bundled npm dependencies are MIT/Apache/ISC licensed; see each
-  package's own LICENSE file in `node_modules/`.
-
-## Lizenz
-
-[MIT](./LICENSE).
+[MIT](./LICENSE) © 2026 Marcel-I-T

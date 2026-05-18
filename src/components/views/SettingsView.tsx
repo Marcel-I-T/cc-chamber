@@ -49,17 +49,17 @@ export function SettingsView() {
         </Row>
         <Row
           label="Override binary"
-          hint="Set CKAUDE_CLAUDE_BIN env var before launching ckaude to use a custom path."
+          hint="Set CC_CHAMBER_CLAUDE_BIN env var before launching cc-chamber to use a custom path."
         >
           <div className="font-mono text-[11px] text-fg-subtle">
-            export CKAUDE_CLAUDE_BIN=/path/to/claude
+            export CC_CHAMBER_CLAUDE_BIN=/path/to/claude
           </div>
         </Row>
       </Section>
 
       <Section title="About">
         <div className="text-[12px] text-fg-muted">
-          ckaude — strukturierter Desktop-Wrapper für Claude Code, im Style von OpenChamber.
+          cc-chamber — strukturierter Desktop-Wrapper für Claude Code, im Style von Open Chamber.
         </div>
       </Section>
     </div>

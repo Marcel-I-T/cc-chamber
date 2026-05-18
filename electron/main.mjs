@@ -9,9 +9,9 @@ import pty from 'node-pty';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const isDev = process.env.CKAUDE_DEV === '1' || !app.isPackaged;
+const isDev = process.env.CC_CHAMBER_DEV === '1' || !app.isPackaged;
 
-app.setName('ckaude');
+app.setName('cc-chamber');
 
 if (!app.requestSingleInstanceLock()) {
   app.exit(0);
@@ -22,7 +22,7 @@ const sessions = new Map();
 
 function resolveClaudeBinary() {
   const candidates = [
-    process.env.CKAUDE_CLAUDE_BIN,
+    process.env.CC_CHAMBER_CLAUDE_BIN,
     path.join(os.homedir(), '.claude', 'local', 'claude'),
     '/usr/local/bin/claude',
     '/opt/homebrew/bin/claude',

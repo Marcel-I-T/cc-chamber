@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * openclauder — desktop launcher for Claude Code
+ * cc-chamber — desktop launcher for Claude Code
  *
  * Auto-builds the UI on first run if dist/ is missing, then spawns Electron
  * pointing at the project root. Use --dev to skip the build step and run
@@ -20,13 +20,13 @@ const flags = new Set(process.argv.slice(2));
 if (flags.has('--help') || flags.has('-h')) {
   console.log(
     [
-      'openclauder — Claude Code desktop wrapper',
+      'cc-chamber — Claude Code desktop wrapper',
       '',
       'Usage:',
-      '  openclauder            launch (auto-builds UI if needed)',
-      '  openclauder --dev      run Vite + Electron dev (HMR)',
-      '  openclauder --build    rebuild UI bundle without launching',
-      '  openclauder --version  print version',
+      '  cc-chamber            launch (auto-builds UI if needed)',
+      '  cc-chamber --dev      run Vite + Electron dev (HMR)',
+      '  cc-chamber --build    rebuild UI bundle without launching',
+      '  cc-chamber --version  print version',
       '',
     ].join('\n'),
   );
@@ -56,19 +56,19 @@ if (flags.has('--dev')) {
 // Default flow: ensure native PTY is built, then bundle, then launch.
 const ptyBinary = path.join(root, 'node_modules', 'node-pty', 'build', 'Release', 'pty.node');
 if (!existsSync(ptyBinary)) {
-  console.log('[openclauder] building native PTY…');
+  console.log('[cc-chamber] building native PTY…');
   const r = run('npm', ['run', 'rebuild']);
   if (r.status !== 0) {
-    console.error('[openclauder] PTY build failed.');
+    console.error('[cc-chamber] PTY build failed.');
     process.exit(r.status ?? 1);
   }
 }
 
 if (!existsSync(distIndex)) {
-  console.log('[openclauder] building UI…');
+  console.log('[cc-chamber] building UI…');
   const r = run('npm', ['run', 'build']);
   if (r.status !== 0) {
-    console.error('[openclauder] UI build failed.');
+    console.error('[cc-chamber] UI build failed.');
     process.exit(r.status ?? 1);
   }
 }

@@ -15,7 +15,7 @@ export class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[ckaude] React error:', error, info);
+    console.error('[cc-chamber] React error:', error, info);
   }
 
   render() {
@@ -24,7 +24,7 @@ export class ErrorBoundary extends React.Component<
         <div className="flex h-full w-full items-center justify-center bg-bg p-8 text-fg">
           <div className="max-w-2xl rounded-lg border border-err/40 bg-err/5 p-6">
             <h1 className="mb-3 text-[15px] font-semibold text-err">
-              ckaude crashed while rendering
+              cc-chamber crashed while rendering
             </h1>
             <div className="mb-3 font-mono text-[12px] text-fg">
               {this.state.error.message}

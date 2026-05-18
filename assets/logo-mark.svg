@@ -1,0 +1,38 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="cc-chamber">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#15151a"/>
+      <stop offset="1" stop-color="#0d0d10"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c4b5fd"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+
+  <!-- rounded background -->
+  <rect width="256" height="256" rx="48" fill="url(#bgGrad)"/>
+  <rect x="0.5" y="0.5" width="255" height="255" rx="47.5" stroke="#2a2a33" stroke-width="1"/>
+
+  <!-- 3D wireframe chamber (isometric cube) -->
+  <g stroke="#e8e8ec" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- back face -->
+    <path d="M 96 64 L 192 64 L 192 160 L 96 160 Z" opacity="0.35"/>
+    <!-- front face -->
+    <path d="M 64 96 L 160 96 L 160 192 L 64 192 Z" fill="rgba(167, 139, 250, 0.06)"/>
+    <!-- connecting edges -->
+    <line x1="96" y1="64" x2="64" y2="96" opacity="0.65"/>
+    <line x1="192" y1="64" x2="160" y2="96" opacity="0.65"/>
+    <line x1="192" y1="160" x2="160" y2="192" opacity="0.65"/>
+    <line x1="96" y1="160" x2="64" y2="192" opacity="0.35"/>
+  </g>
+
+  <!-- inner accent gem -->
+  <rect x="104" y="128" width="28" height="28" fill="url(#accentGrad)" rx="2"/>
+  <rect x="104" y="128" width="28" height="28" fill="none" stroke="#c4b5fd" stroke-width="1" rx="2" opacity="0.6"/>
+
+  <!-- prompt cursor in lower-right corner -->
+  <g transform="translate(178, 200)">
+    <text x="0" y="0" font-family="JetBrains Mono, SF Mono, Menlo, monospace" font-size="22" font-weight="700" fill="#a78bfa">›_</text>
+  </g>
+</svg>

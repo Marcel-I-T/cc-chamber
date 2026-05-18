@@ -68,7 +68,7 @@ export function Sidebar() {
       </div>
 
       <div className="border-t border-border px-3 py-2 text-[10.5px] text-fg-subtle">
-        ckaude · claude-code wrapper
+        cc-chamber · claude-code wrapper
       </div>
     </div>
   );
