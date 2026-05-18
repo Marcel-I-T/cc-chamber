@@ -32,7 +32,6 @@ interface ProjectsStore {
   toggleCollapsed: (id: string) => void;
   setActive: (id: string) => void;
   findByPath: (path: string) => Project | undefined;
-  ensureProjectForPath: (path: string) => Project;
   reorder: (fromIndex: number, toIndex: number) => void;
 }
 
@@ -99,13 +98,6 @@ export const useProjectsStore = create<ProjectsStore>()(
       findByPath: (path) => {
         const np = normalizePath(path);
         return get().projects.find((p) => p.path === np);
-      },
-
-      ensureProjectForPath: (path) => {
-        const np = normalizePath(path);
-        const found = get().projects.find((p) => p.path === np);
-        if (found) return found;
-        return get().addProject(np);
       },
 
       reorder: (fromIndex, toIndex) => {
