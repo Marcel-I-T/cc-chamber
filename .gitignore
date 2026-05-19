@@ -5,6 +5,7 @@ release
 *.log
 .env
 .env.local
+build/notarize-creds.json
 
 # Build artifacts
 tsconfig.tsbuildinfo

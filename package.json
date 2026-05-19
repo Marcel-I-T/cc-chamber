@@ -13,7 +13,8 @@
     "dev:vite": "vite",
     "dev:electron": "wait-on tcp:5173 && cross-env CC_CHAMBER_DEV=1 electron .",
     "build": "tsc -b && vite build",
-    "build:app": "npm run build && electron-builder",
+    "build:app": "npm run build && node -r dotenv/config node_modules/.bin/electron-builder",
+    "build:app:adhoc": "CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder -c.mac.identity=- -c.mac.notarize=false",
     "rebuild": "cd node_modules/node-pty && npm_config_target=42.1.0 npm_config_arch=arm64 npm_config_target_arch=arm64 npm_config_disturl=https://electronjs.org/headers npm_config_runtime=electron npm_config_build_from_source=true node-gyp rebuild",
     "postinstall": "npm run rebuild"
   },
@@ -55,6 +56,7 @@
     "node-gyp": "^11.2.0"
   },
   "devDependencies": {
+    "@electron/notarize": "^3.1.1",
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^25.9.0",
     "@types/react": "^19.2.14",
@@ -62,6 +64,7 @@
     "@vitejs/plugin-react": "^6.0.2",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
+    "dotenv": "^17.4.2",
     "electron": "^42.1.0",
     "electron-builder": "^26.8.1",
     "tailwindcss": "^4.3.0",
@@ -94,9 +97,11 @@
       },
       "category": "public.app-category.developer-tools",
       "icon": "assets/icon.icns",
-      "identity": "-",
-      "hardenedRuntime": false,
-      "gatekeeperAssess": false
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true
     }
   }
 }

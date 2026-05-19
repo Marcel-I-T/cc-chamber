@@ -72,9 +72,24 @@ cc-chamber --help       show this list
 
 ### Build a DMG
 
+For a notarized, distributable DMG (no Gatekeeper warnings):
+
 ```bash
+cp .env.example .env
+# Fill in APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID
 npm run build:app
-# Output: release/cc-chamber-*.dmg
+# Output: release/cc-chamber-*.dmg  (signed + notarized + stapled)
+```
+
+You need a paid Apple Developer Program account ($99/yr) and a `Developer ID
+Application` certificate installed in your Keychain. The app-specific password
+is generated at <https://appleid.apple.com/> under "Sign-in and Security".
+
+For a quick local-only build without notarization:
+
+```bash
+npm run build:app:adhoc
+# Output: ad-hoc signed DMG — opens with "Open Anyway" via System Settings
 ```
 
 ## 🧠 How it works
