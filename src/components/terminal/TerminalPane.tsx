@@ -114,6 +114,17 @@ export function TerminalPane({ session, isActive }: Props) {
         update(sessionId, { status: 'exited', exitCode });
       });
 
+      // Make sure xterm has its real size before we spawn. claude's TUI
+      // captures the dimensions at startup and uses them to lay out prompts;
+      // spawning at the default 80x24 and resizing afterwards leaves some
+      // ink overlays sized to the small grid and they render off-screen.
+      try {
+        fitRef.current?.fit();
+      } catch {}
+
+      const initialCols = Math.max(term.cols, 80);
+      const initialRows = Math.max(term.rows, 24);
+
       // Now spawn the PTY. Any output is already wired up.
       const res = await window.api.pty.spawn({
         sessionId,
@@ -121,6 +132,8 @@ export function TerminalPane({ session, isActive }: Props) {
         skipPermissions: session.skipPermissions,
         mode: session.mode,
         resume: session.resumeOnRespawn,
+        cols: initialCols,
+        rows: initialRows,
       });
 
       if (cancelled) return;

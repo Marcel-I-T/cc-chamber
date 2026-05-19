@@ -4,6 +4,8 @@ export interface SpawnOpts {
   skipPermissions?: boolean;
   mode?: 'claude' | 'shell';
   resume?: boolean;
+  cols?: number;
+  rows?: number;
 }
 
 export interface SpawnResult {

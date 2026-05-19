@@ -119,7 +119,17 @@ function buildEnv() {
   return env;
 }
 
-ipcMain.handle('pty:spawn', (event, { sessionId, cwd, skipPermissions, mode, resume }) => {
+ipcMain.handle('pty:spawn', (event, opts) => {
+  const {
+    sessionId,
+    cwd,
+    skipPermissions,
+    mode,
+    resume,
+    cols: requestedCols,
+    rows: requestedRows,
+  } = opts || {};
+
   if (sessions.has(sessionId)) {
     return { ok: false, error: 'session-exists' };
   }
@@ -133,12 +143,16 @@ ipcMain.handle('pty:spawn', (event, { sessionId, cwd, skipPermissions, mode, res
       ]
     : ['-l'];
 
+  // Default to a comfortable size if the renderer didn't measure yet.
+  const startCols = Math.max(40, Math.min(requestedCols || 120, 500));
+  const startRows = Math.max(10, Math.min(requestedRows || 32, 200));
+
   let proc;
   try {
     proc = pty.spawn(bin, args, {
       name: 'xterm-256color',
-      cols: 100,
-      rows: 30,
+      cols: startCols,
+      rows: startRows,
       cwd: cwd && fs.existsSync(cwd) ? cwd : os.homedir(),
       env: buildEnv(),
     });
