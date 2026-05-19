@@ -15,6 +15,8 @@ export interface SpawnResult {
   bin?: string;
   args?: string[];
   error?: string;
+  reattached?: boolean;
+  replay?: string;
 }
 
 export interface FsEntry {
@@ -30,6 +32,15 @@ declare global {
     api: {
       pty: {
         spawn: (opts: SpawnOpts) => Promise<SpawnResult>;
+        attach: (sessionId: string) => Promise<{
+          ok: boolean;
+          exists?: boolean;
+          pid?: number;
+          bin?: string;
+          args?: string[];
+          replay?: string;
+          error?: string;
+        }>;
         write: (sessionId: string, data: string) => Promise<{ ok: boolean }>;
         resize: (sessionId: string, cols: number, rows: number) => Promise<{ ok: boolean }>;
         kill: (sessionId: string) => Promise<{ ok: boolean }>;

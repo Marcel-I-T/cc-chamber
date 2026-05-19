@@ -144,6 +144,9 @@ function ProjectSection({ project }: { project: Project }) {
       );
       if (!ok) return;
     }
+    for (const s of sessions) {
+      window.api?.pty?.kill(s.id).catch(() => {});
+    }
     removeByProject(project.id);
     removeProject(project.id);
     setShowMenu(false);
@@ -299,6 +302,7 @@ function SessionItem({ session }: { session: Session }) {
       <button
         onClick={(e) => {
           e.stopPropagation();
+          window.api?.pty?.kill(session.id).catch(() => {});
           remove(session.id);
         }}
         className="hidden h-4 w-4 items-center justify-center rounded text-fg-subtle hover:bg-bg-panel hover:text-fg group-hover:flex"

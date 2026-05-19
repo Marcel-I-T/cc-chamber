@@ -114,48 +114,68 @@ export function TerminalPane({ session, isActive }: Props) {
         update(sessionId, { status: 'exited', exitCode });
       });
 
-      // Make sure xterm has its real size before we spawn. claude's TUI
-      // captures the dimensions at startup and uses them to lay out prompts;
-      // spawning at the default 80x24 and resizing afterwards leaves some
-      // ink overlays sized to the small grid and they render off-screen.
-      try {
-        fitRef.current?.fit();
-      } catch {}
+      // First try to reattach to a live PTY (e.g. after a Cmd+R renderer
+      // reload). If it exists, replay the buffered output so the screen
+      // looks exactly as it did before the reload — no claude restart.
+      let reattached = false;
+      let resInfo = null;
 
-      const initialCols = Math.max(term.cols, 80);
-      const initialRows = Math.max(term.rows, 24);
-
-      // Now spawn the PTY. Any output is already wired up.
-      const res = await window.api.pty.spawn({
-        sessionId,
-        cwd: session.cwd,
-        skipPermissions: session.skipPermissions,
-        mode: session.mode,
-        resume: session.resumeOnRespawn,
-        resumeSessionId: session.resumeSessionId,
-        cols: initialCols,
-        rows: initialRows,
-      });
-
-      if (cancelled) return;
-
-      if (!res.ok) {
-        term.write(`\r\n\x1b[31m[cc-chamber] failed to spawn: ${res.error}\x1b[0m\r\n`);
-        update(sessionId, { status: 'error' });
-        return;
+      if (window.api?.pty?.attach) {
+        const att = await window.api.pty.attach(sessionId);
+        if (att.ok && att.exists) {
+          term.write(att.replay ?? '');
+          reattached = true;
+          resInfo = { bin: att.bin, args: att.args, pid: att.pid };
+        }
       }
 
-      // After any successful spawn, mark the session to resume on subsequent
-      // ones — that way the next reload picks up the conversation. Also clear
-      // any one-shot resumeSessionId since we just used it.
-      update(sessionId, { resumeOnRespawn: true, resumeSessionId: undefined });
+      if (!reattached) {
+        // Make sure xterm has its real size before we spawn. claude's TUI
+        // captures the dimensions at startup and uses them to lay out
+        // prompts; spawning at the default 80x24 and resizing afterwards
+        // leaves ink overlays sized to the small grid and they render
+        // off-screen.
+        try {
+          fitRef.current?.fit();
+        } catch {}
 
-      const cmdLine = `${res.bin}${res.args?.length ? ' ' + res.args.join(' ') : ''}`;
-      term.write(
-        `\x1b[2m[cc-chamber] $ ${cmdLine}\r\n[cc-chamber] cwd: ${session.cwd}\r\n[cc-chamber] pid: ${res.pid}\x1b[0m\r\n`
-      );
+        const initialCols = Math.max(term.cols, 80);
+        const initialRows = Math.max(term.rows, 24);
 
-      update(sessionId, { status: 'running', pid: res.pid });
+        const res = await window.api.pty.spawn({
+          sessionId,
+          cwd: session.cwd,
+          skipPermissions: session.skipPermissions,
+          mode: session.mode,
+          resume: session.resumeOnRespawn,
+          resumeSessionId: session.resumeSessionId,
+          cols: initialCols,
+          rows: initialRows,
+        });
+
+        if (cancelled) return;
+
+        if (!res.ok) {
+          term.write(`\r\n\x1b[31m[cc-chamber] failed to spawn: ${res.error}\x1b[0m\r\n`);
+          update(sessionId, { status: 'error' });
+          return;
+        }
+
+        if (res.reattached && res.replay) {
+          term.write(res.replay);
+        } else {
+          const cmdLine = `${res.bin}${res.args?.length ? ' ' + res.args.join(' ') : ''}`;
+          term.write(
+            `\x1b[2m[cc-chamber] $ ${cmdLine}\r\n[cc-chamber] cwd: ${session.cwd}\r\n[cc-chamber] pid: ${res.pid}\x1b[0m\r\n`,
+          );
+        }
+
+        // Mark for future reloads + clear one-shot resume id.
+        update(sessionId, { resumeOnRespawn: true, resumeSessionId: undefined });
+        resInfo = { bin: res.bin, args: res.args, pid: res.pid };
+      }
+
+      update(sessionId, { status: 'running', pid: resInfo?.pid });
 
       inputDisposable = term.onData((data) => {
         window.api.pty.write(sessionId, data);
@@ -164,7 +184,8 @@ export function TerminalPane({ session, isActive }: Props) {
         window.api.pty.resize(sessionId, cols, rows);
       });
 
-      // Send initial size
+      // Push current size to the (possibly long-lived) PTY so it has the
+      // right ioctl after the renderer reattaches.
       window.api.pty.resize(sessionId, term.cols, term.rows);
     })();
 
@@ -174,7 +195,10 @@ export function TerminalPane({ session, isActive }: Props) {
       offExit?.();
       inputDisposable?.dispose();
       resizeDisposable?.dispose();
-      window.api.pty.kill(sessionId).catch(() => {});
+      // Intentionally NOT killing the PTY here. Renderer unmount can happen
+      // on Cmd+R reloads where we want the shell to survive — the next mount
+      // calls pty:attach and replays the buffered output. Explicit "close
+      // session" actions in the sidebar call window.api.pty.kill() directly.
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.id, session.cwd]);

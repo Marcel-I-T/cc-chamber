@@ -18,7 +18,28 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
+/**
+ * Per session we keep:
+ *   - proc        : the live IPty
+ *   - buffer      : a ring-buffer of recent stdout bytes so a freshly reloaded
+ *                   renderer can replay the terminal screen as it was
+ *   - senderId    : the webContents id we forward output to (stable across Cmd+R)
+ * The buffer is capped so long-running TUIs don't grow it unbounded.
+ */
 const sessions = new Map();
+const MAX_REPLAY_BYTES = 256 * 1024; // 256 KB per session — enough to redraw alt-screen
+
+/**
+ * Mirror claude code's folder-name encoding for ~/.claude/projects/. Every
+ * non [A-Za-z0-9-] character becomes a single dash. Slashes, underscores,
+ * spaces and dots all collapse the same way.
+ *
+ *   /Users/marcel/projects/Julis_style → -Users-marcel-projects-Julis-style
+ *   /Users/marcel/Burko-Clone/Burkowski → -Users-marcel-Burko-Clone-Burkowski
+ */
+function encodeClaudeProjectPath(cwd) {
+  return cwd.replace(/[^a-zA-Z0-9-]/g, '-');
+}
 
 function resolveClaudeBinary() {
   const candidates = [
@@ -119,6 +140,32 @@ function buildEnv() {
   return env;
 }
 
+/**
+ * Try to reattach to an existing PTY by sessionId. Returns the replay buffer
+ * so the freshly mounted xterm can re-render the screen exactly as it was.
+ * If no PTY exists, returns `{ok:true, exists:false}` and the renderer
+ * should fall through to pty:spawn.
+ */
+ipcMain.handle('pty:attach', (event, { sessionId } = {}) => {
+  if (!sessionId) return { ok: false, error: 'sessionId required' };
+  const entry = sessions.get(sessionId);
+  if (!entry) return { ok: true, exists: false };
+
+  // Update the receiver — this matters when Electron decides to reuse the
+  // same webContents but assigns it a slightly different id (rare).
+  entry.senderId = event.sender.id;
+
+  const replay = entry.buffer.join('');
+  return {
+    ok: true,
+    exists: true,
+    pid: entry.proc.pid,
+    bin: entry.bin,
+    args: entry.args,
+    replay,
+  };
+});
+
 ipcMain.handle('pty:spawn', (event, opts) => {
   const {
     sessionId,
@@ -131,16 +178,20 @@ ipcMain.handle('pty:spawn', (event, opts) => {
     rows: requestedRows,
   } = opts || {};
 
-  // If a PTY for this sessionId already exists (typical case: renderer was
-  // reloaded with Cmd+R), shoot it cleanly and let the new spawn re-attach
-  // claude via --continue. The renderer's xterm has lost the alt-screen
-  // anyway, so reattaching to live output would only show garbage.
+  // We expect callers to have tried pty:attach first. If a PTY for this id
+  // already exists, return it without respawning — preserves the live shell
+  // across renderer reloads.
   if (sessions.has(sessionId)) {
-    const old = sessions.get(sessionId);
-    sessions.delete(sessionId);
-    try {
-      old.kill('SIGHUP');
-    } catch {}
+    const entry = sessions.get(sessionId);
+    entry.senderId = event.sender.id;
+    return {
+      ok: true,
+      pid: entry.proc.pid,
+      bin: entry.bin,
+      args: entry.args,
+      reattached: true,
+      replay: entry.buffer.join(''),
+    };
   }
 
   const useClaude = mode !== 'shell';
@@ -173,27 +224,42 @@ ipcMain.handle('pty:spawn', (event, opts) => {
     return { ok: false, error: String(err?.message || err) };
   }
 
-  const senderId = event.sender.id;
   const channel = `pty:data:${sessionId}`;
   const exitChannel = `pty:exit:${sessionId}`;
 
-  // Capture proc by reference so a late-arriving callback from an OLD pty
-  // (killed during a Cmd+R respawn) cannot evict the new one from the map.
+  const entry = {
+    proc,
+    bin,
+    args,
+    buffer: [],
+    bufferBytes: 0,
+    senderId: event.sender.id,
+  };
+  sessions.set(sessionId, entry);
+
   proc.onData((data) => {
-    if (sessions.get(sessionId) !== proc) return;
-    const wc = BrowserWindow.fromId(senderId)?.webContents ?? event.sender;
+    const current = sessions.get(sessionId);
+    if (!current || current.proc !== proc) return;
+
+    // Append to ring buffer (cap total bytes)
+    current.buffer.push(data);
+    current.bufferBytes += data.length;
+    while (current.bufferBytes > MAX_REPLAY_BYTES && current.buffer.length > 1) {
+      current.bufferBytes -= current.buffer[0].length;
+      current.buffer.shift();
+    }
+
+    const wc = BrowserWindow.fromId(current.senderId)?.webContents ?? event.sender;
     if (wc && !wc.isDestroyed()) wc.send(channel, data);
   });
   proc.onExit(({ exitCode, signal }) => {
-    const isCurrent = sessions.get(sessionId) === proc;
-    if (isCurrent) {
-      const wc = BrowserWindow.fromId(senderId)?.webContents ?? event.sender;
-      if (wc && !wc.isDestroyed()) wc.send(exitChannel, { exitCode, signal });
-      sessions.delete(sessionId);
-    }
+    const current = sessions.get(sessionId);
+    if (!current || current.proc !== proc) return;
+    const wc = BrowserWindow.fromId(current.senderId)?.webContents ?? event.sender;
+    if (wc && !wc.isDestroyed()) wc.send(exitChannel, { exitCode, signal });
+    sessions.delete(sessionId);
   });
 
-  sessions.set(sessionId, proc);
   return { ok: true, pid: proc.pid, bin, args };
 });
 
@@ -284,7 +350,7 @@ ipcMain.handle('app:claudeBin', () => resolveClaudeBinary());
 ipcMain.handle('claude:listSessions', async (_e, { cwd } = {}) => {
   try {
     if (!cwd) return { ok: false, error: 'cwd required' };
-    const encoded = cwd.replace(/\//g, '-');
+    const encoded = encodeClaudeProjectPath(cwd);
     const dir = path.join(os.homedir(), '.claude', 'projects', encoded);
     if (!fs.existsSync(dir)) return { ok: true, sessions: [] };
 
@@ -364,7 +430,7 @@ ipcMain.handle('claude:readSession', async (_e, opts) => {
     const { cwd, sessionId } = opts || {};
     if (!cwd) return { ok: false, error: 'cwd required' };
 
-    const encoded = cwd.replace(/\//g, '-');
+    const encoded = encodeClaudeProjectPath(cwd);
     const projectsDir = path.join(os.homedir(), '.claude', 'projects', encoded);
     if (!fs.existsSync(projectsDir)) {
       return { ok: true, sessionId: null, messages: [], available: false };

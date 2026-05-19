@@ -15,6 +15,7 @@ function on(channel, handler) {
 contextBridge.exposeInMainWorld('api', {
   pty: {
     spawn: (opts) => ipcRenderer.invoke('pty:spawn', opts),
+    attach: (sessionId) => ipcRenderer.invoke('pty:attach', { sessionId }),
     write: (sessionId, data) => ipcRenderer.invoke('pty:write', { sessionId, data }),
     resize: (sessionId, cols, rows) => ipcRenderer.invoke('pty:resize', { sessionId, cols, rows }),
     kill: (sessionId) => ipcRenderer.invoke('pty:kill', { sessionId }),
