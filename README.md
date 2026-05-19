@@ -4,6 +4,7 @@
 
 **A clean desktop room for [Claude Code](https://docs.claude.com/en/docs/claude-code) — terminal, markdown chat, file browser, sessions per project.**
 
+[![Download DMG](https://img.shields.io/github/v/release/Marcel-I-T/cc-chamber?style=flat-square&label=Download&logo=apple&logoColor=white&color=a78bfa)](https://github.com/Marcel-I-T/cc-chamber/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-a78bfa.svg?style=flat-square)](./LICENSE)
 [![Platform: macOS](https://img.shields.io/badge/macOS-arm64-15151a?style=flat-square&logo=apple)](https://github.com/Marcel-I-T/cc-chamber)
 [![Electron 33](https://img.shields.io/badge/Electron-33-2a2a33?style=flat-square&logo=electron)](https://www.electronjs.org)
