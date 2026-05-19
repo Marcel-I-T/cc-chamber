@@ -203,6 +203,16 @@ export function TerminalPane({ session, isActive }: Props) {
       // Push current size to the (possibly long-lived) PTY so it has the
       // right ioctl after the renderer reattaches.
       window.api.pty.resize(sessionId, term.cols, term.rows);
+
+      // Steal focus a beat after the spawn settles. This catches the
+      // typical "I clicked + and now nothing types" case: at that moment
+      // the focus is still on the button that triggered create(), so the
+      // first keystrokes go nowhere. Two-step focus (rAF + 100ms) is
+      // belt+braces against react render race conditions.
+      if (isActive) {
+        requestAnimationFrame(() => term.focus());
+        setTimeout(() => term.focus(), 100);
+      }
     })();
 
     return () => {

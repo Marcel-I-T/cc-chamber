@@ -1,6 +1,6 @@
 {
   "name": "cc-chamber",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A clean desktop room for Claude Code — terminal + markdown chat + file browser, in the Open-Chamber style",
   "main": "electron/main.mjs",
   "type": "module",
