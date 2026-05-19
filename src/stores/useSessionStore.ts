@@ -21,6 +21,9 @@ export interface Session {
    *  pick up the most recent claude conversation in this cwd. Set
    *  automatically after the first successful spawn. */
   resumeOnRespawn?: boolean;
+  /** If set, the next PTY spawn passes `--resume <id>` to claude — used
+   *  when the user explicitly picks a past session from the sidebar. */
+  resumeSessionId?: string;
   createdAt: number;
   lastActiveAt: number;
 }

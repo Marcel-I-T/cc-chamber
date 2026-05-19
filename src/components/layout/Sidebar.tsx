@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useProjectsStore, type Project } from '@/stores/useProjectsStore';
 import { useSessionStore, type Session } from '@/stores/useSessionStore';
+import { PastSessionsList } from '@/components/session/PastSessionsList';
 import { cn } from '@/lib/utils';
 
 const statusDot = {
@@ -260,6 +261,7 @@ function ProjectSection({ project }: { project: Project }) {
           ) : (
             sessions.map((s) => <SessionItem key={s.id} session={s} />)
           )}
+          <PastSessionsList projectId={project.id} cwd={project.path} />
         </div>
       )}
     </div>

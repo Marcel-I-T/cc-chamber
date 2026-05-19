@@ -4,6 +4,7 @@ export interface SpawnOpts {
   skipPermissions?: boolean;
   mode?: 'claude' | 'shell';
   resume?: boolean;
+  resumeSessionId?: string;
   cols?: number;
   rows?: number;
 }
@@ -77,6 +78,11 @@ declare global {
           sourceFile?: string;
           error?: string;
         }>;
+        listSessions: (opts: { cwd: string }) => Promise<{
+          ok: boolean;
+          sessions?: PastSession[];
+          error?: string;
+        }>;
       };
     };
   }
@@ -93,6 +99,15 @@ export type ClaudeBlock =
       isError?: boolean;
     }
   | { type: 'image'; source: string };
+
+export interface PastSession {
+  sessionId: string;
+  mtime: number;
+  size: number;
+  title: string | null;
+  firstUserPrompt: string | null;
+  messageCount: number;
+}
 
 export interface TuiMessage {
   id: string;

@@ -132,6 +132,7 @@ export function TerminalPane({ session, isActive }: Props) {
         skipPermissions: session.skipPermissions,
         mode: session.mode,
         resume: session.resumeOnRespawn,
+        resumeSessionId: session.resumeSessionId,
         cols: initialCols,
         rows: initialRows,
       });
@@ -145,8 +146,9 @@ export function TerminalPane({ session, isActive }: Props) {
       }
 
       // After any successful spawn, mark the session to resume on subsequent
-      // ones — that way the next reload picks up the conversation.
-      update(sessionId, { resumeOnRespawn: true });
+      // ones — that way the next reload picks up the conversation. Also clear
+      // any one-shot resumeSessionId since we just used it.
+      update(sessionId, { resumeOnRespawn: true, resumeSessionId: undefined });
 
       const cmdLine = `${res.bin}${res.args?.length ? ' ' + res.args.join(' ') : ''}`;
       term.write(

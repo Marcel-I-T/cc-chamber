@@ -126,19 +126,32 @@ ipcMain.handle('pty:spawn', (event, opts) => {
     skipPermissions,
     mode,
     resume,
+    resumeSessionId,
     cols: requestedCols,
     rows: requestedRows,
   } = opts || {};
 
+  // If a PTY for this sessionId already exists (typical case: renderer was
+  // reloaded with Cmd+R), shoot it cleanly and let the new spawn re-attach
+  // claude via --continue. The renderer's xterm has lost the alt-screen
+  // anyway, so reattaching to live output would only show garbage.
   if (sessions.has(sessionId)) {
-    return { ok: false, error: 'session-exists' };
+    const old = sessions.get(sessionId);
+    sessions.delete(sessionId);
+    try {
+      old.kill('SIGHUP');
+    } catch {}
   }
 
   const useClaude = mode !== 'shell';
   const bin = useClaude ? resolveClaudeBinary() : (process.env.SHELL || '/bin/zsh');
   const args = useClaude
     ? [
-        ...(resume ? ['--continue'] : []),
+        ...(resumeSessionId
+          ? ['--resume', resumeSessionId]
+          : resume
+          ? ['--continue']
+          : []),
         ...(skipPermissions ? ['--dangerously-skip-permissions'] : []),
       ]
     : ['-l'];
@@ -164,14 +177,20 @@ ipcMain.handle('pty:spawn', (event, opts) => {
   const channel = `pty:data:${sessionId}`;
   const exitChannel = `pty:exit:${sessionId}`;
 
+  // Capture proc by reference so a late-arriving callback from an OLD pty
+  // (killed during a Cmd+R respawn) cannot evict the new one from the map.
   proc.onData((data) => {
+    if (sessions.get(sessionId) !== proc) return;
     const wc = BrowserWindow.fromId(senderId)?.webContents ?? event.sender;
     if (wc && !wc.isDestroyed()) wc.send(channel, data);
   });
   proc.onExit(({ exitCode, signal }) => {
-    const wc = BrowserWindow.fromId(senderId)?.webContents ?? event.sender;
-    if (wc && !wc.isDestroyed()) wc.send(exitChannel, { exitCode, signal });
-    sessions.delete(sessionId);
+    const isCurrent = sessions.get(sessionId) === proc;
+    if (isCurrent) {
+      const wc = BrowserWindow.fromId(senderId)?.webContents ?? event.sender;
+      if (wc && !wc.isDestroyed()) wc.send(exitChannel, { exitCode, signal });
+      sessions.delete(sessionId);
+    }
   });
 
   sessions.set(sessionId, proc);
@@ -258,6 +277,84 @@ ipcMain.handle('fs:list', async (_e, { dirPath }) => {
 
 ipcMain.handle('app:homedir', () => os.homedir());
 ipcMain.handle('app:claudeBin', () => resolveClaudeBinary());
+
+// List all on-disk claude sessions for a given cwd. Returns metadata only —
+// session id, mtime, message count, optional ai-generated title, first user
+// prompt. Used by the sidebar to show resumable conversations.
+ipcMain.handle('claude:listSessions', async (_e, { cwd } = {}) => {
+  try {
+    if (!cwd) return { ok: false, error: 'cwd required' };
+    const encoded = cwd.replace(/\//g, '-');
+    const dir = path.join(os.homedir(), '.claude', 'projects', encoded);
+    if (!fs.existsSync(dir)) return { ok: true, sessions: [] };
+
+    const entries = (await fsp.readdir(dir, { withFileTypes: true })).filter(
+      (d) => d.isFile() && d.name.endsWith('.jsonl'),
+    );
+
+    const sessions = await Promise.all(
+      entries.map(async (d) => {
+        const file = path.join(dir, d.name);
+        const stat = await fsp.stat(file);
+        const sessionId = d.name.replace(/\.jsonl$/, '');
+
+        // Read just enough lines to find a title + first user message.
+        // Files can be huge (MB), so don't slurp everything.
+        let title = null;
+        let firstUserPrompt = null;
+        let messageCount = 0;
+        try {
+          const raw = await fsp.readFile(file, 'utf8');
+          for (const line of raw.split('\n')) {
+            if (!line.trim()) continue;
+            let entry;
+            try {
+              entry = JSON.parse(line);
+            } catch {
+              continue;
+            }
+            if (entry.type === 'ai-title' && entry.aiTitle && !title) {
+              title = entry.aiTitle;
+            }
+            if (entry.type === 'user' && !firstUserPrompt) {
+              const msg = entry.message;
+              let text = '';
+              if (typeof msg?.content === 'string') text = msg.content;
+              else if (Array.isArray(msg?.content)) {
+                text = msg.content
+                  .filter((b) => b.type === 'text')
+                  .map((b) => b.text || '')
+                  .join(' ');
+              }
+              text = text.trim();
+              // Skip "tool_result" pseudo-user-messages
+              if (text && text.length > 1 && !text.startsWith('[{')) {
+                firstUserPrompt = text.slice(0, 200);
+              }
+            }
+            if (entry.type === 'user' || entry.type === 'assistant') {
+              messageCount += 1;
+            }
+          }
+        } catch {}
+
+        return {
+          sessionId,
+          mtime: stat.mtimeMs,
+          size: stat.size,
+          title,
+          firstUserPrompt,
+          messageCount,
+        };
+      }),
+    );
+
+    sessions.sort((a, b) => b.mtime - a.mtime);
+    return { ok: true, sessions };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
 
 // Read a claude code session log from disk. Each TUI conversation is stored
 // as JSONL under ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl. We use
