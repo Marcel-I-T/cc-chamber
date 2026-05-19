@@ -26,6 +26,7 @@ export function Header() {
   const sessions = useSessionStore((s) => s.sessions);
   const updateSession = useSessionStore((s) => s.update);
   const setViewMode = useSessionStore((s) => s.setViewMode);
+  const setDefaultSkipPerms = useSessionStore((s) => s.setDefaultSkipPermissions);
   const active = sessions.find((s) => s.id === activeId);
   const viewMode = active?.viewMode ?? 'terminal';
 
@@ -48,10 +49,12 @@ export function Header() {
   }
 
   function toggleSkip() {
-    if (!active) return;
-    // Toggling while running stores the new preference; the change takes
-    // effect on the next spawn (close + reopen the session).
-    updateSession(active.id, { skipPermissions: !active.skipPermissions });
+    const next = !active?.skipPermissions;
+    if (active) {
+      updateSession(active.id, { skipPermissions: next });
+    }
+    // Also flip the global default so the next + click inherits the choice.
+    setDefaultSkipPerms(next);
   }
 
   return (
@@ -154,10 +157,10 @@ export function Header() {
           )}
           title={
             active?.status === 'running'
-              ? `Skip-perms is ${active.skipPermissions ? 'ON' : 'OFF'} for the live session — toggling applies on the next spawn (close + reopen the session)`
+              ? `Live session was spawned with skip-perms ${active.skipPermissions ? 'ON' : 'OFF'}. Toggling sets the new default but only applies after you close + reopen the session.`
               : active?.skipPermissions
               ? 'Skip permissions ON — claude --dangerously-skip-permissions'
-              : 'Skip permissions OFF'
+              : 'Skip permissions OFF — claude will ask before each tool use'
           }
         >
           {active?.skipPermissions ? <ShieldOff size={13} /> : <Shield size={13} />}

@@ -54,6 +54,7 @@ export function BottomComposer() {
   const updateMessage = useChatStore((s) => s.updateMessage);
   const setClaudeSessionId = useChatStore((s) => s.setClaudeSessionId);
   const thread = useChatStore((s) => (active ? s.threads[active.id] : undefined));
+  const setDefaultSkipPerms = useSessionStore((s) => s.setDefaultSkipPermissions);
 
   const projects = useProjectsStore((s) => s.projects);
   const activeProjectId = useProjectsStore((s) => s.activeProjectId);
@@ -215,11 +216,13 @@ export function BottomComposer() {
   }
 
   function toggleSkipPerms() {
-    if (!active) return;
-    // Toggling while a terminal session is running just stores the new
-    // preference; it takes effect on the next spawn (close + reopen).
-    // In chat mode every send is a fresh spawn, so it applies immediately.
-    updateSession(active.id, { skipPermissions: !active.skipPermissions });
+    const next = !active?.skipPermissions;
+    if (active) {
+      updateSession(active.id, { skipPermissions: next });
+    }
+    // Mirror to the global default so every fresh + click picks the same
+    // choice. Without this, new sessions always reverted to OFF.
+    setDefaultSkipPerms(next);
   }
 
   async function runSlash(cmd: string) {
