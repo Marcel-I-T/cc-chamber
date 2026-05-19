@@ -100,6 +100,17 @@ export function TerminalPane({ session, isActive }: Props) {
     let resizeDisposable: { dispose: () => void } | null = null;
 
     (async () => {
+      // Defensive: if preload didn't load for some reason, surface that
+      // instead of throwing on a null `window.api` (which would silently
+      // unmount this pane via React's error boundary up the tree).
+      if (!window.api?.pty) {
+        term.write(
+          '\x1b[31m[cc-chamber] preload bridge unavailable — restart Electron with `Ctrl+C && npm run dev`.\x1b[0m\r\n',
+        );
+        update(sessionId, { status: 'error' });
+        return;
+      }
+
       // Subscribe BEFORE spawn so we never miss output if the process exits fast.
       offData = window.api.pty.onData(sessionId, (data) => {
         term.write(data);
