@@ -1,4 +1,6 @@
-import { contextBridge, ipcRenderer } from 'electron';
+// CommonJS preload. Loads reliably inside the asar bundle on Electron 42.
+// Same surface as the old preload.mjs.
+const { contextBridge, ipcRenderer } = require('electron');
 
 const subs = new Map();
 
