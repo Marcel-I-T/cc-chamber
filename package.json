@@ -77,17 +77,26 @@
     "directories": {
       "output": "release"
     },
+    "npmRebuild": false,
     "files": [
       "dist/**",
       "electron/**",
       "bin/**",
       "assets/**",
-      "package.json"
+      "package.json",
+      "node_modules/node-pty/build/Release/pty.node",
+      "node_modules/node-pty/build/Release/spawn-helper"
     ],
     "mac": {
-      "target": "dmg",
+      "target": {
+        "target": "dmg",
+        "arch": [
+          "arm64"
+        ]
+      },
       "category": "public.app-category.developer-tools",
-      "icon": "assets/logo-mark.svg"
+      "icon": "assets/icon.icns",
+      "identity": null
     }
   }
 }
