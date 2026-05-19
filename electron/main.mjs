@@ -264,25 +264,25 @@ ipcMain.handle('pty:spawn', (event, opts) => {
 });
 
 ipcMain.handle('pty:write', (_e, { sessionId, data }) => {
-  const proc = sessions.get(sessionId);
-  if (!proc) return { ok: false, error: 'no-session' };
-  proc.write(data);
+  const entry = sessions.get(sessionId);
+  if (!entry) return { ok: false, error: 'no-session' };
+  entry.proc.write(data);
   return { ok: true };
 });
 
 ipcMain.handle('pty:resize', (_e, { sessionId, cols, rows }) => {
-  const proc = sessions.get(sessionId);
-  if (!proc) return { ok: false };
+  const entry = sessions.get(sessionId);
+  if (!entry) return { ok: false };
   try {
-    proc.resize(Math.max(1, cols | 0), Math.max(1, rows | 0));
+    entry.proc.resize(Math.max(1, cols | 0), Math.max(1, rows | 0));
   } catch {}
   return { ok: true };
 });
 
 ipcMain.handle('pty:kill', (_e, { sessionId }) => {
-  const proc = sessions.get(sessionId);
-  if (!proc) return { ok: false };
-  try { proc.kill(); } catch {}
+  const entry = sessions.get(sessionId);
+  if (!entry) return { ok: false };
+  try { entry.proc.kill(); } catch {}
   sessions.delete(sessionId);
   return { ok: true };
 });
