@@ -44,15 +44,20 @@ export function TerminalPane({ session, isActive }: Props) {
   useEffect(() => {
     if (!containerRef.current || termRef.current) return;
 
+    // Menlo first: macOS-built-in so the cell metrics are correct on first
+    // render. Without that, xterm.fit() can return wrong cols/rows and ink
+    // (claude's TUI engine) positions choice prompts off-screen.
     const term = new Terminal({
       cursorBlink: true,
-      fontFamily: 'JetBrains Mono, SF Mono, Menlo, monospace',
+      fontFamily: 'Menlo, "SF Mono", "JetBrains Mono", Monaco, "Courier New", monospace',
       fontSize: 13,
       lineHeight: 1.2,
       letterSpacing: 0,
       allowProposedApi: true,
       theme: THEME,
       scrollback: 5000,
+      convertEol: false,
+      cursorStyle: 'block',
     });
     const fit = new FitAddon();
     const links = new WebLinksAddon();

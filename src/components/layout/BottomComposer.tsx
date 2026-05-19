@@ -179,10 +179,9 @@ export function BottomComposer() {
 
   function toggleSkipPerms() {
     if (!active) return;
-    // In terminal mode the flag is baked into the PTY spawn so you can't
-    // flip it while running. In chat mode every send is a fresh spawn,
-    // so it can change anytime.
-    if (viewMode === 'terminal' && active.status === 'running') return;
+    // Toggling while a terminal session is running just stores the new
+    // preference; it takes effect on the next spawn (close + reopen).
+    // In chat mode every send is a fresh spawn, so it applies immediately.
     updateSession(active.id, { skipPermissions: !active.skipPermissions });
   }
 
@@ -289,7 +288,7 @@ export function BottomComposer() {
         {/* Skip perms — pre-spawn in terminal mode, per-call in chat */}
         <button
           onClick={toggleSkipPerms}
-          disabled={!active || (viewMode === 'terminal' && active.status === 'running')}
+          disabled={!active}
           className={cn(
             'flex h-6 items-center gap-1 rounded-md border px-2 text-[11px] font-medium disabled:opacity-50',
             active?.skipPermissions
@@ -297,8 +296,10 @@ export function BottomComposer() {
               : 'border-border bg-bg-elevated text-fg-muted hover:bg-bg-panel hover:text-fg'
           )}
           title={
-            active?.status === 'running'
-              ? 'Stop session to change'
+            viewMode === 'chat'
+              ? 'Toggle --dangerously-skip-permissions (applies to next chat send)'
+              : active?.status === 'running'
+              ? 'Toggle --dangerously-skip-permissions — takes effect on next spawn (close + reopen the session)'
               : 'Toggle --dangerously-skip-permissions for new spawns'
           }
         >

@@ -49,7 +49,8 @@ export function Header() {
 
   function toggleSkip() {
     if (!active) return;
-    if (active.status === 'running') return;
+    // Toggling while running stores the new preference; the change takes
+    // effect on the next spawn (close + reopen the session).
     updateSession(active.id, { skipPermissions: !active.skipPermissions });
   }
 
@@ -144,7 +145,7 @@ export function Header() {
       <div className="ml-auto flex items-center gap-1">
         <button
           onClick={toggleSkip}
-          disabled={!active || active.status === 'running'}
+          disabled={!active}
           className={cn(
             'no-drag flex h-7 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium transition-colors disabled:opacity-50',
             active?.skipPermissions
@@ -153,7 +154,7 @@ export function Header() {
           )}
           title={
             active?.status === 'running'
-              ? 'Stop session to change'
+              ? `Skip-perms is ${active.skipPermissions ? 'ON' : 'OFF'} for the live session — toggling applies on the next spawn (close + reopen the session)`
               : active?.skipPermissions
               ? 'Skip permissions ON — claude --dangerously-skip-permissions'
               : 'Skip permissions OFF'

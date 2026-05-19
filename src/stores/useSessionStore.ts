@@ -141,15 +141,17 @@ export const useSessionStore = create<SessionStore>()(
       name: 'ckaude-sessions',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
+        // Keep per-session settings exactly as they are. Specifically we
+        // must NOT blanket-set resumeOnRespawn here — that would make every
+        // new session reuse claude's most-recent JSONL for the cwd via
+        // --continue, so multiple sessions in the same project would all
+        // see the same conversation.
         sessions: state.sessions.map((s) => ({
           ...s,
-          // ensure new fields backfill cleanly when reading older payloads
           viewMode: (s as Session).viewMode ?? 'terminal',
           status: 'idle' as const,
           pid: undefined,
           exitCode: undefined,
-          // mark all persisted sessions to resume on next spawn
-          resumeOnRespawn: true,
         })),
         activeId: state.activeId,
         defaultSkipPermissions: state.defaultSkipPermissions,
