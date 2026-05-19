@@ -4,12 +4,13 @@
 
 **A clean desktop room for [Claude Code](https://docs.claude.com/en/docs/claude-code) — terminal, markdown chat, file browser, sessions per project.**
 
-[![Download DMG](https://img.shields.io/github/v/release/Marcel-I-T/cc-chamber?style=flat-square&label=Download&logo=apple&logoColor=white&color=a78bfa)](https://github.com/Marcel-I-T/cc-chamber/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/Marcel-I-T/cc-chamber?style=flat-square&label=Release&color=a78bfa)](https://github.com/Marcel-I-T/cc-chamber/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-a78bfa.svg?style=flat-square)](./LICENSE)
 [![Platform: macOS](https://img.shields.io/badge/macOS-arm64-15151a?style=flat-square&logo=apple)](https://github.com/Marcel-I-T/cc-chamber)
-[![Electron 33](https://img.shields.io/badge/Electron-33-2a2a33?style=flat-square&logo=electron)](https://www.electronjs.org)
-[![React 18](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react&logoColor=15151a)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Electron 42](https://img.shields.io/badge/Electron-42-2a2a33?style=flat-square&logo=electron)](https://www.electronjs.org)
+[![React 19](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=15151a)](https://react.dev)
+[![Vite 8](https://img.shields.io/badge/Vite-8-646cff?style=flat-square&logo=vite&logoColor=white)](https://vite.dev)
+[![Tailwind 4](https://img.shields.io/badge/Tailwind-4-38bdf8?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
 </div>
 
@@ -39,57 +40,54 @@ The [`claude` CLI](https://docs.claude.com/en/docs/claude-code) is great in the 
 | | |
 |---|---|
 | 🏠 **Projects → Sessions** | Sidebar lists projects (= directories), each with its own session list. Collapsible, renameable, color-tagged. |
-| 💬 **Terminal ⇄ Chat toggle** | Per session, flip between full `claude` TUI and a markdown chat view. Same project context. |
+| 💬 **Terminal ⇄ Chat toggle** | Per session, flip between full `claude` TUI and a markdown chat view that mirrors the same conversation from disk. |
 | 📁 **File browser** | Right sidebar with type-colored icons, lazy-loaded subfolders, search. |
-| 🎨 **Bottom composer** | Model picker (Default / Sonnet / Opus), Plan/Build mode, slash commands, attachments. |
+| 🎨 **Bottom composer** | Model picker (Default / Sonnet / Opus), Plan/Build mode, slash commands. |
 | 🔐 **Skip-perms toggle** | `--dangerously-skip-permissions` as a per-session toggle. |
 | 💾 **Persistent everything** | Projects, sessions, chat threads survive refresh and app restart. Terminal sessions resume with `--continue`, chats with `--resume <session-id>`. |
 | ⚡ **Two-spawn modes** | Long-running PTY for TUI, headless `claude -p --output-format json` for chat. |
 | 🪟 **OC-style layout** | Header / Sidebar / Main / RightSidebar / BottomDock — proven structure, customised for terminal-first workflow. |
 
-## 🚀 Quickstart
+## 🚀 Install
+
+### Recommended: build from source
+
+This is the cleanest path — no macOS Gatekeeper warnings, works on any Mac (arm64 or Intel), trivial to update:
 
 ```bash
-# Prerequisites: macOS, Node.js 20+, Claude Code CLI installed & signed in
+# Prerequisites: Node.js 20+ and the official `claude` CLI signed in
 git clone https://github.com/Marcel-I-T/cc-chamber.git
 cd cc-chamber
-npm install                # installs deps + builds the native PTY
-npm link                   # makes `cc-chamber` available globally
-cc-chamber                 # auto-builds UI on first run, then launches
+npm install         # installs deps + compiles the native PTY
+npm link            # makes `cc-chamber` available globally
+cc-chamber          # auto-builds the UI on first run, then launches
 ```
 
-After the first run the UI bundle is cached, so subsequent launches start in under a second.
+To update later: `cd cc-chamber && git pull && npm install`.
 
-### CLI flags
+The first launch builds the UI bundle (~1 s with Vite 8 / Rolldown) and rebuilds `node-pty` for the local Electron — all subsequent starts are instant.
+
+### Alternative: DMG download
+
+A pre-built DMG is available on the [releases page](https://github.com/Marcel-I-T/cc-chamber/releases/latest) for Apple Silicon Macs. **One-time setup is needed** because the build is ad-hoc signed but not yet Apple-notarized — macOS Gatekeeper will block it the first time.
+
+After moving `cc-chamber.app` to `/Applications/`, do **one** of:
+
+- **System Settings → Privacy & Security**, scroll down to "Security", click "**Open Anyway**" next to the cc-chamber notice (Touch ID / password to confirm).
+- Or in Terminal: `xattr -dr com.apple.quarantine /Applications/cc-chamber.app`
+
+From then on it opens normally from Spotlight or Finder. Subsequent updates only need the same step if you delete and re-download — installing over the existing app preserves the trust decision.
+
+The DMG includes both the app bundle and the precompiled native PTY, so you don't need Node.js for this path.
+
+### Daily usage
 
 ```
 cc-chamber              launch (auto-builds UI if needed)
-cc-chamber --dev        Vite + Electron with HMR
-cc-chamber --build      rebuild UI bundle without launching
+cc-chamber --dev        Vite + Electron with HMR (for hacking on the code)
+cc-chamber --build      rebuild the UI bundle without launching
 cc-chamber --version    print version
 cc-chamber --help       show this list
-```
-
-### Build a DMG
-
-For a notarized, distributable DMG (no Gatekeeper warnings):
-
-```bash
-cp .env.example .env
-# Fill in APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID
-npm run build:app
-# Output: release/cc-chamber-*.dmg  (signed + notarized + stapled)
-```
-
-You need a paid Apple Developer Program account ($99/yr) and a `Developer ID
-Application` certificate installed in your Keychain. The app-specific password
-is generated at <https://appleid.apple.com/> under "Sign-in and Security".
-
-For a quick local-only build without notarization:
-
-```bash
-npm run build:app:adhoc
-# Output: ad-hoc signed DMG — opens with "Open Anyway" via System Settings
 ```
 
 ## 🧠 How it works
@@ -115,7 +113,7 @@ npm run build:app:adhoc
 ```
 
 - **Terminal mode** spawns `claude [--dangerously-skip-permissions] [--continue]` in a real PTY via `node-pty`. xterm.js renders. Full TUI fidelity (Plan mode, slash commands, etc).
-- **Chat mode** is stateless on the wire: each send is `claude -p "<message>" --output-format json [--resume <session-id>]`. The JSON `session_id` is persisted per thread, so follow-up messages keep context.
+- **Chat mode** reads claude's own session log (`~/.claude/projects/<encoded-cwd>/<uuid>.jsonl`) and renders it as markdown bubbles — collapsible tool calls, syntax-highlighted code blocks, expandable "thinking" blocks. Sending from the composer calls `claude -p "<message>" --output-format json --resume <session-id>`, so chat and terminal share the same conversation.
 
 ## 🗂 Architecture
 
@@ -124,7 +122,7 @@ cc-chamber/
 ├── bin/
 │   └── cc-chamber.mjs           CLI launcher (auto-build + Electron spawn)
 ├── electron/
-│   ├── main.mjs                 IPC handlers (pty:*, fs:*, claude:run)
+│   ├── main.mjs                 IPC handlers (pty:*, fs:*, claude:run, claude:readSession)
 │   └── preload.mjs              contextBridge → window.api
 ├── src/
 │   ├── App.tsx
@@ -132,7 +130,7 @@ cc-chamber/
 │   │   ├── layout/              MainLayout, Header, Sidebar, RightSidebar,
 │   │   │                        BottomDock, BottomComposer
 │   │   ├── terminal/            TerminalPane (xterm.js + node-pty)
-│   │   ├── chat/                ChatView, ChatMessage (react-markdown + GFM)
+│   │   ├── chat/                ChatView, ChatMessage, MirrorMessage
 │   │   ├── files/               FileTree (lazy, type-colored icons)
 │   │   └── views/               TerminalView, SettingsView, EmptyHero
 │   ├── stores/                  Zustand stores with persist middleware:
@@ -161,12 +159,29 @@ cc-chamber/
 
 ## 🗺 Roadmap
 
+- [ ] Apple-notarized DMG (zero Gatekeeper friction)
 - [ ] Git tab in the right sidebar (branches, status, diffs)
 - [ ] Inline file viewer (click a file in the tree → open in main area)
 - [ ] Linux / Windows builds
 - [ ] First-class Plan/Build indicator that follows claude's actual state
 - [ ] Search across chat history
 - [ ] Theme customization
+
+## 🛠 Building a DMG (maintainers)
+
+A maintainer needs a paid Apple Developer Program account + `Developer ID Application` certificate in their Keychain. Then:
+
+```bash
+cp .env.example .env
+# Fill in APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID
+npm run build:app                 # signed + notarized + stapled
+```
+
+For a quick ad-hoc-signed local build (no Apple account needed, Gatekeeper warning on first open):
+
+```bash
+npm run build:app:adhoc
+```
 
 ## 🤝 Contributing
 
