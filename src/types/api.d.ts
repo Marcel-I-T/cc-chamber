@@ -64,9 +64,39 @@ declare global {
           parsed?: ClaudeRunResult | null;
           error?: string;
         }>;
+        readSession: (opts: {
+          cwd: string;
+          sessionId?: string;
+        }) => Promise<{
+          ok: boolean;
+          sessionId?: string | null;
+          messages?: TuiMessage[];
+          available?: boolean;
+          sourceFile?: string;
+          error?: string;
+        }>;
       };
     };
   }
+}
+
+export type ClaudeBlock =
+  | { type: 'text'; text: string }
+  | { type: 'thinking'; text: string }
+  | { type: 'tool_use'; name: string; input: unknown; id?: string }
+  | {
+      type: 'tool_result';
+      toolUseId?: string;
+      text: string;
+      isError?: boolean;
+    }
+  | { type: 'image'; source: string };
+
+export interface TuiMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  blocks: ClaudeBlock[];
+  ts: number;
 }
 
 export interface ClaudeRunResult {

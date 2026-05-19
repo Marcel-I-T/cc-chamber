@@ -245,6 +245,124 @@ ipcMain.handle('fs:list', async (_e, { dirPath }) => {
 ipcMain.handle('app:homedir', () => os.homedir());
 ipcMain.handle('app:claudeBin', () => resolveClaudeBinary());
 
+// Read a claude code session log from disk. Each TUI conversation is stored
+// as JSONL under ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl. We use
+// this to show the live terminal session as formatted chat bubbles.
+ipcMain.handle('claude:readSession', async (_e, opts) => {
+  try {
+    const { cwd, sessionId } = opts || {};
+    if (!cwd) return { ok: false, error: 'cwd required' };
+
+    const encoded = cwd.replace(/\//g, '-');
+    const projectsDir = path.join(os.homedir(), '.claude', 'projects', encoded);
+    if (!fs.existsSync(projectsDir)) {
+      return { ok: true, sessionId: null, messages: [], available: false };
+    }
+
+    let targetFile;
+    if (sessionId) {
+      targetFile = path.join(projectsDir, `${sessionId}.jsonl`);
+      if (!fs.existsSync(targetFile)) {
+        return { ok: false, error: `session ${sessionId} not found` };
+      }
+    } else {
+      // pick most recently modified
+      const entries = (await fsp.readdir(projectsDir, { withFileTypes: true }))
+        .filter((d) => d.isFile() && d.name.endsWith('.jsonl'));
+      if (entries.length === 0) {
+        return { ok: true, sessionId: null, messages: [], available: false };
+      }
+      const stats = await Promise.all(
+        entries.map(async (d) => ({
+          name: d.name,
+          mtime: (await fsp.stat(path.join(projectsDir, d.name))).mtimeMs,
+        })),
+      );
+      stats.sort((a, b) => b.mtime - a.mtime);
+      targetFile = path.join(projectsDir, stats[0].name);
+    }
+
+    const raw = await fsp.readFile(targetFile, 'utf8');
+    const lines = raw.split('\n').filter((l) => l.trim().length > 0);
+    const messages = [];
+    let resolvedSessionId = null;
+
+    for (const line of lines) {
+      let entry;
+      try {
+        entry = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      if (entry.sessionId && !resolvedSessionId) resolvedSessionId = entry.sessionId;
+      if (entry.type !== 'user' && entry.type !== 'assistant') continue;
+
+      const msg = entry.message;
+      if (!msg) continue;
+
+      // Normalise content to a structured array of blocks
+      let blocks = [];
+      if (typeof msg.content === 'string') {
+        blocks = [{ type: 'text', text: msg.content }];
+      } else if (Array.isArray(msg.content)) {
+        blocks = msg.content.map((b) => {
+          if (b.type === 'text') return { type: 'text', text: b.text ?? '' };
+          if (b.type === 'thinking') return { type: 'thinking', text: b.thinking ?? '' };
+          if (b.type === 'tool_use') {
+            return {
+              type: 'tool_use',
+              name: b.name ?? 'tool',
+              input: b.input ?? {},
+              id: b.id,
+            };
+          }
+          if (b.type === 'tool_result') {
+            let text = '';
+            if (typeof b.content === 'string') text = b.content;
+            else if (Array.isArray(b.content)) {
+              text = b.content
+                .filter((c) => c.type === 'text')
+                .map((c) => c.text)
+                .join('\n');
+            }
+            return {
+              type: 'tool_result',
+              toolUseId: b.tool_use_id,
+              text,
+              isError: !!b.is_error,
+            };
+          }
+          if (b.type === 'image') return { type: 'image', source: 'attached' };
+          return { type: 'text', text: JSON.stringify(b).slice(0, 200) };
+        });
+      }
+
+      messages.push({
+        id: entry.uuid ?? String(messages.length),
+        role: entry.type, // 'user' | 'assistant'
+        blocks,
+        ts: entry.timestamp ? new Date(entry.timestamp).getTime() : 0,
+      });
+    }
+
+    if (!resolvedSessionId) {
+      // fallback: filename without extension
+      const base = path.basename(targetFile, '.jsonl');
+      if (/^[a-f0-9-]{36}$/i.test(base)) resolvedSessionId = base;
+    }
+
+    return {
+      ok: true,
+      sessionId: resolvedSessionId,
+      messages,
+      available: true,
+      sourceFile: targetFile,
+    };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
 // Headless claude run for the chat mode. Spawns `claude -p ... --output-format json`,
 // optionally with --resume to keep multi-turn context.
 ipcMain.handle('claude:run', async (_e, opts) => {

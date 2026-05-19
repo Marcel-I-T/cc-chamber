@@ -31,5 +31,6 @@ contextBridge.exposeInMainWorld('api', {
   },
   claude: {
     run: (opts) => ipcRenderer.invoke('claude:run', opts),
+    readSession: (opts) => ipcRenderer.invoke('claude:readSession', opts),
   },
 });
