@@ -1,6 +1,6 @@
 {
   "name": "cc-chamber",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A clean desktop room for Claude Code — terminal + markdown chat + file browser, in the Open-Chamber style",
   "main": "electron/main.mjs",
   "type": "module",
@@ -14,7 +14,7 @@
     "dev:electron": "wait-on tcp:5173 && cross-env CC_CHAMBER_DEV=1 electron .",
     "build": "tsc -b && vite build",
     "build:app": "npm run build && electron-builder",
-    "rebuild": "cd node_modules/node-pty && npm_config_target=33.4.11 npm_config_arch=arm64 npm_config_target_arch=arm64 npm_config_disturl=https://electronjs.org/headers npm_config_runtime=electron npm_config_build_from_source=true node-gyp rebuild",
+    "rebuild": "cd node_modules/node-pty && npm_config_target=42.1.0 npm_config_arch=arm64 npm_config_target_arch=arm64 npm_config_disturl=https://electronjs.org/headers npm_config_runtime=electron npm_config_build_from_source=true node-gyp rebuild",
     "postinstall": "npm run rebuild"
   },
   "repository": {
@@ -38,38 +38,36 @@
     "ai-coding"
   ],
   "dependencies": {
-    "@xterm/addon-fit": "^0.10.0",
-    "@xterm/addon-web-links": "^0.11.0",
-    "@xterm/xterm": "^5.5.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-web-links": "^0.12.0",
+    "@xterm/xterm": "^6.0.0",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.460.0",
-    "node-pty": "^1.0.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "lucide-react": "^1.16.0",
+    "node-pty": "^1.1.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^2.5.4",
-    "zustand": "^5.0.1"
+    "zustand": "^5.0.13"
   },
   "overrides": {
     "node-gyp": "^11.2.0"
   },
   "devDependencies": {
-    "@types/node": "^22.9.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.3",
-    "autoprefixer": "^10.4.20",
-    "concurrently": "^9.1.0",
-    "cross-env": "^7.0.3",
-    "electron": "^33.2.0",
-    "electron-builder": "^25.1.8",
-    "electron-rebuild": "^3.2.9",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.15",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.11",
-    "wait-on": "^8.0.1"
+    "@tailwindcss/vite": "^4.3.0",
+    "@types/node": "^25.9.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^42.1.0",
+    "electron-builder": "^26.8.1",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.13",
+    "wait-on": "^9.0.10"
   },
   "build": {
     "appId": "dev.cc-chamber.desktop",
@@ -96,7 +94,9 @@
       },
       "category": "public.app-category.developer-tools",
       "icon": "assets/icon.icns",
-      "identity": null
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     }
   }
 }
