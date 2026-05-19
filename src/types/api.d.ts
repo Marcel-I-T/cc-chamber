@@ -52,9 +52,27 @@ declare global {
       };
       fs: {
         pickDirectory: () => Promise<string | null>;
+        pickFiles: (opts?: {
+          multi?: boolean;
+          defaultPath?: string;
+          filters?: { name: string; extensions: string[] }[];
+        }) => Promise<string[]>;
         list: (dirPath: string) => Promise<{
           ok: boolean;
           items?: FsEntry[];
+          error?: string;
+        }>;
+        readFile: (filePath: string) => Promise<{
+          ok: boolean;
+          content?: string;
+          size?: number;
+          mtimeMs?: number;
+          error?: string;
+        }>;
+        writeFile: (filePath: string, content: string) => Promise<{
+          ok: boolean;
+          size?: number;
+          mtimeMs?: number;
           error?: string;
         }>;
       };

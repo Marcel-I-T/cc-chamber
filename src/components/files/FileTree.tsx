@@ -7,9 +7,10 @@ import { cn } from '@/lib/utils';
 interface FileTreeProps {
   rootPath: string;
   filter: string;
+  onFileClick?: (path: string) => void;
 }
 
-export function FileTree({ rootPath, filter }: FileTreeProps) {
+export function FileTree({ rootPath, filter, onFileClick }: FileTreeProps) {
   const [items, setItems] = useState<FsEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -81,6 +82,7 @@ export function FileTree({ rootPath, filter }: FileTreeProps) {
           expanded={expanded}
           setExpanded={setExpanded}
           filter={filter}
+          onFileClick={onFileClick}
         />
       ))}
       {items.length === 0 && (
@@ -99,9 +101,17 @@ interface NodeProps {
   expanded: Set<string>;
   setExpanded: (next: Set<string>) => void;
   filter: string;
+  onFileClick?: (path: string) => void;
 }
 
-function Node({ entry, depth, expanded, setExpanded, filter }: NodeProps) {
+function Node({
+  entry,
+  depth,
+  expanded,
+  setExpanded,
+  filter,
+  onFileClick,
+}: NodeProps) {
   const isDir = entry.type === 'dir';
   const isOpen = isDir && expanded.has(entry.path);
   const [children, setChildren] = useState<FsEntry[] | null>(null);
@@ -138,11 +148,14 @@ function Node({ entry, depth, expanded, setExpanded, filter }: NodeProps) {
   }, [isOpen, entry.path, children]);
 
   function toggle() {
-    if (!isDir) return;
-    const next = new Set(expanded);
-    if (next.has(entry.path)) next.delete(entry.path);
-    else next.add(entry.path);
-    setExpanded(next);
+    if (isDir) {
+      const next = new Set(expanded);
+      if (next.has(entry.path)) next.delete(entry.path);
+      else next.add(entry.path);
+      setExpanded(next);
+      return;
+    }
+    onFileClick?.(entry.path);
   }
 
   const { Icon, color } = iconFor(entry.name, isDir);
@@ -189,6 +202,7 @@ function Node({ entry, depth, expanded, setExpanded, filter }: NodeProps) {
               expanded={expanded}
               setExpanded={setExpanded}
               filter={filter}
+              onFileClick={onFileClick}
             />
           ))}
           {children && children.length === 0 && (

@@ -3,6 +3,7 @@ import { GitBranch, Files, Search, Plus, RefreshCw } from 'lucide-react';
 import { useProjectsStore } from '@/stores/useProjectsStore';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { FileTree } from '@/components/files/FileTree';
+import { FileEditor } from '@/components/files/FileEditor';
 import { cn } from '@/lib/utils';
 
 type Tab = 'git' | 'files';
@@ -21,6 +22,14 @@ export function RightSidebar() {
   const [tab, setTab] = useState<Tab>('files');
   const [filter, setFilter] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editingFile, setEditingFile] = useState<string | null>(null);
+
+  // When a file is selected, take over the whole panel with the editor view.
+  if (editingFile) {
+    return (
+      <FileEditor filePath={editingFile} onClose={() => setEditingFile(null)} />
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -74,7 +83,12 @@ export function RightSidebar() {
           {/* Tree */}
           <div className="min-h-0 flex-1 overflow-y-auto">
             {project ? (
-              <FileTree key={`${project.id}-${refreshKey}`} rootPath={project.path} filter={filter} />
+              <FileTree
+                key={`${project.id}-${refreshKey}`}
+                rootPath={project.path}
+                filter={filter}
+                onFileClick={(p) => setEditingFile(p)}
+              />
             ) : (
               <div className="px-3 py-6 text-center text-[11px] text-fg-subtle">
                 No project selected

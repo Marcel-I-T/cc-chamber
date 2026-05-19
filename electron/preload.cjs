@@ -26,7 +26,10 @@ contextBridge.exposeInMainWorld('api', {
   },
   fs: {
     pickDirectory: () => ipcRenderer.invoke('fs:pickDirectory'),
+    pickFiles: (opts) => ipcRenderer.invoke('fs:pickFiles', opts),
     list: (dirPath) => ipcRenderer.invoke('fs:list', { dirPath }),
+    readFile: (filePath) => ipcRenderer.invoke('fs:readFile', { filePath }),
+    writeFile: (filePath, content) => ipcRenderer.invoke('fs:writeFile', { filePath, content }),
   },
   app: {
     homedir: () => ipcRenderer.invoke('app:homedir'),

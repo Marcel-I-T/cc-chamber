@@ -91,6 +91,43 @@ export function BottomComposer() {
     await window.api.pty.write(active.id, data);
   }
 
+  function insertIntoTextarea(snippet: string) {
+    const el = textareaRef.current;
+    if (!el) {
+      setText((t) => (t ? t + ' ' + snippet : snippet));
+      return;
+    }
+    const start = el.selectionStart ?? text.length;
+    const end = el.selectionEnd ?? text.length;
+    const before = text.slice(0, start);
+    const after = text.slice(end);
+    // Add a space before snippet if needed, and after if more text follows.
+    const needsLeadSpace = before.length > 0 && !/\s$/.test(before);
+    const needsTrailSpace = after.length > 0 && !/^\s/.test(after);
+    const insert =
+      (needsLeadSpace ? ' ' : '') + snippet + (needsTrailSpace ? ' ' : '');
+    const next = before + insert + after;
+    setText(next);
+    // Restore caret after the inserted snippet, on next tick (after React updates value).
+    requestAnimationFrame(() => {
+      const pos = (before + insert).length;
+      el.focus();
+      el.setSelectionRange(pos, pos);
+    });
+  }
+
+  async function handleAttach() {
+    if (!window.api?.fs?.pickFiles) return;
+    const defaultPath = active?.cwd;
+    const files = await window.api.fs.pickFiles({ multi: true, defaultPath });
+    if (!files?.length) return;
+    // Quote any path that contains whitespace so claude's tools can resolve it.
+    const snippet = files
+      .map((p) => (/\s/.test(p) ? `"${p}"` : p))
+      .join(' ');
+    insertIntoTextarea(snippet);
+  }
+
   async function handleSend() {
     if (!canSend || !active) return;
     const value = text;
@@ -260,7 +297,12 @@ export function BottomComposer() {
 
       {/* Bottom action row */}
       <div className="flex items-center gap-1 px-3 pb-2 pt-2">
-        <IconBtn title="Attach (not yet)" icon={Plus} disabled />
+        <IconBtn
+          title="Attach files — inserts the absolute paths into the message"
+          icon={Plus}
+          onClick={handleAttach}
+          disabled={!active}
+        />
         <IconBtn
           title={fullscreen ? 'Shrink composer' : 'Expand composer'}
           icon={Maximize2}

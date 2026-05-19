@@ -296,6 +296,22 @@ ipcMain.handle('fs:pickDirectory', async (e) => {
   return res.filePaths[0];
 });
 
+ipcMain.handle('fs:pickFiles', async (e, opts = {}) => {
+  const win = BrowserWindow.fromWebContents(e.sender);
+  const props = ['openFile'];
+  if (opts.multi) props.push('multiSelections');
+  if (opts.defaultPath && !fs.existsSync(opts.defaultPath)) {
+    delete opts.defaultPath;
+  }
+  const res = await dialog.showOpenDialog(win, {
+    properties: props,
+    defaultPath: opts.defaultPath,
+    filters: opts.filters,
+  });
+  if (res.canceled || !res.filePaths.length) return [];
+  return res.filePaths;
+});
+
 const HIDDEN_DIRS = new Set([
   'node_modules',
   '.next',
@@ -343,6 +359,42 @@ ipcMain.handle('fs:list', async (_e, { dirPath }) => {
 
 ipcMain.handle('app:homedir', () => os.homedir());
 ipcMain.handle('app:claudeBin', () => resolveClaudeBinary());
+
+ipcMain.handle('fs:readFile', async (_e, { filePath } = {}) => {
+  try {
+    if (!filePath) return { ok: false, error: 'filePath required' };
+    const stat = await fsp.stat(filePath);
+    if (!stat.isFile()) return { ok: false, error: 'not-a-file' };
+    if (stat.size > 5 * 1024 * 1024) {
+      return { ok: false, error: 'file-too-large', size: stat.size };
+    }
+    const raw = await fsp.readFile(filePath);
+    // Cheap binary heuristic: NUL byte in the first 8 KB.
+    const head = raw.subarray(0, Math.min(raw.length, 8192));
+    if (head.includes(0)) {
+      return { ok: false, error: 'binary', size: stat.size };
+    }
+    return {
+      ok: true,
+      content: raw.toString('utf8'),
+      size: stat.size,
+      mtimeMs: stat.mtimeMs,
+    };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('fs:writeFile', async (_e, { filePath, content } = {}) => {
+  try {
+    if (!filePath) return { ok: false, error: 'filePath required' };
+    await fsp.writeFile(filePath, content, 'utf8');
+    const stat = await fsp.stat(filePath);
+    return { ok: true, size: stat.size, mtimeMs: stat.mtimeMs };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
 
 // List all on-disk claude sessions for a given cwd. Returns metadata only —
 // session id, mtime, message count, optional ai-generated title, first user
